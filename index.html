@@ -7,26 +7,27 @@
   <style>
     body {
       font-family: Arial, sans-serif;
+      background-color: #f2f2f2;
       padding: 30px;
       margin: 0;
-      background-color: #f8f9fa;
     }
     h1 {
       text-align: center;
+      margin-bottom: 30px;
     }
     .container {
       display: flex;
       justify-content: center;
       align-items: flex-start;
-      flex-wrap: wrap;
       gap: 40px;
+      flex-wrap: wrap;
     }
     .diagram-side {
       flex: 1 1 500px;
       text-align: center;
     }
     .controls-side {
-      flex: 1 1 300px;
+      flex: 1 1 350px;
       display: flex;
       flex-direction: column;
       align-items: center;
@@ -35,61 +36,48 @@
       width: 100%;
       max-width: 500px;
       height: auto;
-      margin-bottom: 10px;
+      margin-bottom: 15px;
     }
-    .question-box {
-      margin-top: 20px;
-      width: 100%;
-    }
-    .question {
-      font-size: 1.2em;
-      margin: 10px;
-      text-align: center;
-    }
-    .answer-input {
+    select, input {
       padding: 10px;
       font-size: 1em;
-      margin: 5px;
-      width: 90%;
+      margin: 5px 0;
+      width: 100%;
+      max-width: 250px;
     }
-    .check-btn, .next-btn, .reset-btn, .review-btn {
+    .question {
+      margin-top: 20px;
+      font-size: 1.2em;
+    }
+    button {
       padding: 10px 20px;
+      margin: 10px 5px;
       font-size: 1em;
-      margin: 10px;
       cursor: pointer;
     }
     .result, .score {
       margin-top: 10px;
       font-weight: bold;
-      text-align: center;
     }
-    select {
-      padding: 10px;
-      font-size: 1em;
-      margin: 10px;
-      width: 100%;
-      max-width: 250px;
+    #celebration {
+      color: green;
+      font-size: 1.4em;
+      margin-top: 20px;
+      display: none;
     }
     .review-list {
       margin-top: 20px;
       font-size: 0.95em;
       text-align: left;
     }
-    #celebration {
-      display: none;
-      text-align: center;
-      font-size: 1.5em;
-      color: #28a745;
-      margin-top: 20px;
-    }
   </style>
 </head>
 <body>
   <h1>Anatomy Quiz: Heart & Lungs</h1>
   <div class="container">
-    <div class="diagram-side" id="diagram-container">
-      <img id="diagram-main" src="https://i.postimg.cc/VvNQ27cg/Screenshot-2025-04-05-231749.png" alt="Main Heart Diagram" />
-      <img id="diagram-extra" src="https://i.postimg.cc/bN0tNX3C/Screenshot-2025-04-06-002749.png" alt="Blood Clot and Work" />
+    <div class="diagram-side">
+      <img id="diagram-main" src="https://i.postimg.cc/VvNQ27cg/Screenshot-2025-04-05-231749.png" alt="Heart Diagram">
+      <img id="diagram-extra" src="https://i.postimg.cc/bN0tNX3C/Screenshot-2025-04-06-002749.png" alt="Icons Diagram">
     </div>
     <div class="controls-side">
       <label for="system-select">Choose System:</label>
@@ -101,20 +89,21 @@
       <label for="label-select">Choose Number:</label>
       <select id="label-select" onchange="updateLabel()"></select>
 
-      <div class="question-box">
-        <div class="question">What is <span id="label-number">1</span>?</div>
-        <input id="answer-en" class="answer-input" type="text" placeholder="English Answer..." />
-        <input id="answer-pt" class="answer-input" type="text" placeholder="Portuguese Answer..." />
-        <br />
-        <button class="check-btn" onclick="checkAnswer()">Check</button>
-        <button class="next-btn" onclick="nextLabel()">Next</button>
-        <button class="reset-btn" onclick="resetQuiz()">Reset</button>
-        <button class="review-btn" onclick="showReview()">Review All</button>
-        <div class="result" id="result"></div>
-        <div class="score" id="score"></div>
-        <div id="celebration">🎉 Perfect Score! You're a master of this system! 🎉</div>
-        <div class="review-list" id="review"></div>
+      <div class="question">What is <span id="label-number">1</span>?</div>
+      <input id="answer-en" type="text" placeholder="English Answer...">
+      <input id="answer-pt" type="text" placeholder="Portuguese Answer...">
+
+      <div>
+        <button onclick="checkAnswer()">Check</button>
+        <button onclick="nextLabel()">Next</button>
+        <button onclick="resetQuiz()">Reset</button>
+        <button onclick="showReview()">Review All</button>
       </div>
+
+      <div class="result" id="result"></div>
+      <div class="score" id="score"></div>
+      <div id="celebration">🎉 Perfect Score! You're a master of this system! 🎉</div>
+      <div class="review-list" id="review"></div>
     </div>
   </div>
 
@@ -160,17 +149,15 @@
       16: ["pulmonary function test", "teste de função pulmonar"]
     };
 
+    let currentSystem = "heart";
     let currentLabel = 1;
+    let correctEN = 0;
+    let correctPT = 0;
+    let scoreTracker = new Set();
+    let reviewAnswers = [];
 
     function getLabels() {
-      const system = document.getElementById("system-select").value;
-      return system === "heart" ? heartLabels : lungLabels;
-    }
-
-    function updateLabel() {
-      const labelSelect = document.getElementById("label-select");
-      currentLabel = parseInt(labelSelect.value);
-      document.getElementById("label-number").textContent = currentLabel;
+      return currentSystem === "heart" ? heartLabels : lungLabels;
     }
 
     function populateLabelDropdown() {
@@ -180,27 +167,88 @@
       Object.keys(labels).forEach((key) => {
         const option = document.createElement("option");
         option.value = key;
-        option.textContent = key;
+        option.text = key;
         labelSelect.appendChild(option);
       });
-      currentLabel = parseInt(Object.keys(labels)[0]);
+      currentLabel = 1;
       labelSelect.value = currentLabel;
       updateLabel();
     }
 
-    function switchSystem() {
-      const system = document.getElementById("system-select").value;
-      const diagramMain = document.getElementById("diagram-main");
-      const diagramExtra = document.getElementById("diagram-extra");
+    function updateLabel() {
+      currentLabel = parseInt(document.getElementById("label-select").value);
+      document.getElementById("label-number").textContent = currentLabel;
+      document.getElementById("answer-en").value = "";
+      document.getElementById("answer-pt").value = "";
+      document.getElementById("result").textContent = "";
+    }
 
-      if (system === "heart") {
-        diagramMain.src = "https://i.postimg.cc/VvNQ27cg/Screenshot-2025-04-05-231749.png";
-        diagramExtra.style.display = "block";
+    function updateScore() {
+      const total = Object.keys(getLabels()).length;
+      document.getElementById("score").textContent = `Score: EN ${correctEN}/${scoreTracker.size}, PT ${correctPT}/${scoreTracker.size} (Total Labels: ${total})`;
+      document.getElementById("celebration").style.display = (correctEN === total && correctPT === total) ? "block" : "none";
+    }
+
+    function checkAnswer() {
+      const enInput = document.getElementById("answer-en").value.trim().toLowerCase();
+      const ptInput = document.getElementById("answer-pt").value.trim().toLowerCase();
+      const [correctENVal, correctPTVal] = getLabels()[currentLabel];
+      let newAttempt = !scoreTracker.has(currentSystem + currentLabel);
+      if (newAttempt) scoreTracker.add(currentSystem + currentLabel);
+
+      const isENCorrect = enInput === correctENVal;
+      const isPTCorrect = ptInput === correctPTVal;
+      if (isENCorrect && newAttempt) correctEN++;
+      if (isPTCorrect && newAttempt) correctPT++;
+
+      reviewAnswers.push({ label: currentLabel, correctENVal, correctPTVal, enInput, ptInput, isENCorrect, isPTCorrect });
+
+      const result = document.getElementById("result");
+      if (isENCorrect && isPTCorrect) {
+        result.style.color = "green";
+        result.textContent = "✅ Both answers correct!";
       } else {
-        diagramMain.src = "https://i.postimg.cc/903VwP3Y/Screenshot-2025-04-05-232010.png";
-        diagramExtra.style.display = "none";
+        result.style.color = "red";
+        result.textContent = `❌ ${!isENCorrect ? 'EN wrong → ' + correctENVal + '. ' : ''}${!isPTCorrect ? 'PT wrong → ' + correctPTVal : ''}`;
       }
+      updateScore();
+    }
+
+    function nextLabel() {
+      const keys = Object.keys(getLabels()).map(Number);
+      const nextIndex = (keys.indexOf(currentLabel) + 1) % keys.length;
+      currentLabel = keys[nextIndex];
+      document.getElementById("label-select").value = currentLabel;
+      updateLabel();
+    }
+
+    function resetQuiz() {
+      correctEN = 0;
+      correctPT = 0;
+      scoreTracker.clear();
+      reviewAnswers = [];
+      currentLabel = 1;
+      document.getElementById("celebration").style.display = "none";
       populateLabelDropdown();
+      document.getElementById("score").textContent = "";
+      document.getElementById("review").innerHTML = "";
+    }
+
+    function showReview() {
+      const reviewDiv = document.getElementById("review");
+      reviewDiv.innerHTML = "<h3>Review:</h3>";
+      reviewAnswers.forEach(r => {
+        reviewDiv.innerHTML += `<div style='color:${r.isENCorrect && r.isPTCorrect ? 'green' : 'red'}'>[${r.label}] EN: \"${r.enInput}\" → \"${r.correctENVal}\" | PT: \"${r.ptInput}\" → \"${r.correctPTVal}\"</div>`;
+      });
+    }
+
+    function switchSystem() {
+      currentSystem = document.getElementById("system-select").value;
+      document.getElementById("diagram-main").src = currentSystem === "heart"
+        ? "https://i.postimg.cc/VvNQ27cg/Screenshot-2025-04-05-231749.png"
+        : "https://i.postimg.cc/903VwP3Y/Screenshot-2025-04-05-232010.png";
+      document.getElementById("diagram-extra").style.display = currentSystem === "heart" ? "block" : "none";
+      resetQuiz();
     }
 
     window.onload = populateLabelDropdown;
