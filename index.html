@@ -4,9 +4,206 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Anatomy Quiz: Heart & Lungs</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      padding: 30px;
+      margin: 0;
+      background-color: #f8f9fa;
+    }
+    h1 {
+      text-align: center;
+    }
+    .container {
+      display: flex;
+      justify-content: center;
+      align-items: flex-start;
+      flex-wrap: wrap;
+      gap: 40px;
+    }
+    .diagram-side {
+      flex: 1 1 500px;
+      text-align: center;
+    }
+    .controls-side {
+      flex: 1 1 300px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+    img {
+      width: 100%;
+      max-width: 500px;
+      height: auto;
+      margin-bottom: 10px;
+    }
+    .question-box {
+      margin-top: 20px;
+      width: 100%;
+    }
+    .question {
+      font-size: 1.2em;
+      margin: 10px;
+      text-align: center;
+    }
+    .answer-input {
+      padding: 10px;
+      font-size: 1em;
+      margin: 5px;
+      width: 90%;
+    }
+    .check-btn, .next-btn, .reset-btn, .review-btn {
+      padding: 10px 20px;
+      font-size: 1em;
+      margin: 10px;
+      cursor: pointer;
+    }
+    .result, .score {
+      margin-top: 10px;
+      font-weight: bold;
+      text-align: center;
+    }
+    select {
+      padding: 10px;
+      font-size: 1em;
+      margin: 10px;
+      width: 100%;
+      max-width: 250px;
+    }
+    .review-list {
+      margin-top: 20px;
+      font-size: 0.95em;
+      text-align: left;
+    }
+    #celebration {
+      display: none;
+      text-align: center;
+      font-size: 1.5em;
+      color: #28a745;
+      margin-top: 20px;
+    }
+  </style>
 </head>
 <body>
-  <h1>Anatomy Quiz</h1>
-  <p>This is a placeholder for the full version of the quiz.</p>
+  <h1>Anatomy Quiz: Heart & Lungs</h1>
+  <div class="container">
+    <div class="diagram-side" id="diagram-container">
+      <img id="diagram-main" src="https://i.postimg.cc/VvNQ27cg/Screenshot-2025-04-05-231749.png" alt="Main Heart Diagram" />
+      <img id="diagram-extra" src="https://i.postimg.cc/bN0tNX3C/Screenshot-2025-04-06-002749.png" alt="Blood Clot and Work" />
+    </div>
+    <div class="controls-side">
+      <label for="system-select">Choose System:</label>
+      <select id="system-select" onchange="switchSystem()">
+        <option value="heart">Heart</option>
+        <option value="lungs">Lungs</option>
+      </select>
+
+      <label for="label-select">Choose Number:</label>
+      <select id="label-select" onchange="updateLabel()"></select>
+
+      <div class="question-box">
+        <div class="question">What is <span id="label-number">1</span>?</div>
+        <input id="answer-en" class="answer-input" type="text" placeholder="English Answer..." />
+        <input id="answer-pt" class="answer-input" type="text" placeholder="Portuguese Answer..." />
+        <br />
+        <button class="check-btn" onclick="checkAnswer()">Check</button>
+        <button class="next-btn" onclick="nextLabel()">Next</button>
+        <button class="reset-btn" onclick="resetQuiz()">Reset</button>
+        <button class="review-btn" onclick="showReview()">Review All</button>
+        <div class="result" id="result"></div>
+        <div class="score" id="score"></div>
+        <div id="celebration">🎉 Perfect Score! You're a master of this system! 🎉</div>
+        <div class="review-list" id="review"></div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const heartLabels = {
+      1: ["superior vena cava", "veia cava superior"],
+      2: ["pulmonary valve", "válvula pulmonar"],
+      3: ["right atrium", "átrio direito"],
+      4: ["tricuspid valve", "válvula tricúspide"],
+      5: ["right ventricle", "ventrículo direito"],
+      6: ["inferior vena cava", "veia cava inferior"],
+      7: ["aorta", "aorta"],
+      8: ["pulmonary artery", "artéria pulmonar"],
+      9: ["pulmonary veins", "veias pulmonares"],
+      10: ["left atrium", "átrio esquerdo"],
+      11: ["mitral valve", "válvula mitral"],
+      12: ["left ventricle", "ventrículo esquerdo"],
+      13: ["myocardium", "miocárdio"],
+      14: ["descending aorta", "aorta descendente"],
+      15: ["aortic valve", "válvula aórtica"],
+      16: ["pericardium", "pericárdio"],
+      17: ["septum", "septo cardíaco"],
+      18: ["blood clot", "coágulo sanguíneo"],
+      19: ["blood work", "análise sanguínea"]
+    };
+
+    const lungLabels = {
+      1: ["nasal cavity", "cavidade nasal"],
+      2: ["pharynx", "faringe"],
+      3: ["larynx", "laringe"],
+      4: ["trachea", "traqueia"],
+      5: ["right lung", "pulmão direito"],
+      6: ["alveoli", "alvéolos"],
+      7: ["left lung", "pulmão esquerdo"],
+      8: ["bronchioles", "bronquíolos"],
+      9: ["rib", "costela"],
+      10: ["diaphragm", "diafragma"],
+      11: ["bronchi", "brônquios"],
+      12: ["pleura", "pleura"],
+      13: ["sinuses", "seios nasais"],
+      14: ["inhale", "inspirar"],
+      15: ["exhale", "expirar"],
+      16: ["pulmonary function test", "teste de função pulmonar"]
+    };
+
+    let currentLabel = 1;
+
+    function getLabels() {
+      const system = document.getElementById("system-select").value;
+      return system === "heart" ? heartLabels : lungLabels;
+    }
+
+    function updateLabel() {
+      const labelSelect = document.getElementById("label-select");
+      currentLabel = parseInt(labelSelect.value);
+      document.getElementById("label-number").textContent = currentLabel;
+    }
+
+    function populateLabelDropdown() {
+      const labelSelect = document.getElementById("label-select");
+      labelSelect.innerHTML = "";
+      const labels = getLabels();
+      Object.keys(labels).forEach((key) => {
+        const option = document.createElement("option");
+        option.value = key;
+        option.textContent = key;
+        labelSelect.appendChild(option);
+      });
+      currentLabel = parseInt(Object.keys(labels)[0]);
+      labelSelect.value = currentLabel;
+      updateLabel();
+    }
+
+    function switchSystem() {
+      const system = document.getElementById("system-select").value;
+      const diagramMain = document.getElementById("diagram-main");
+      const diagramExtra = document.getElementById("diagram-extra");
+
+      if (system === "heart") {
+        diagramMain.src = "https://i.postimg.cc/VvNQ27cg/Screenshot-2025-04-05-231749.png";
+        diagramExtra.style.display = "block";
+      } else {
+        diagramMain.src = "https://i.postimg.cc/903VwP3Y/Screenshot-2025-04-05-232010.png";
+        diagramExtra.style.display = "none";
+      }
+      populateLabelDropdown();
+    }
+
+    window.onload = populateLabelDropdown;
+  </script>
 </body>
 </html>
